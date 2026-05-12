@@ -247,26 +247,20 @@ function passesSrcFilter(title, cfg) {
 
 // â”€â”€â”€ FormataÃ§Ã£o AIOStreams â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-const SOURCE_ICONS = {
-  Torrentio: 'ðŸŒ', BrazucaTorrents: 'ðŸ‡§ðŸ‡·', BluDV: 'ðŸ“€',
-  Comando: 'ðŸ“¡', RedeTorrent: 'ðŸ•¸ï¸', StarckFilmes: 'â­',
-  TorrentDosFilmes: 'ðŸŽ¬', VacaTorrent: 'ðŸ„',
-};
-
-function inferLanguageFlags(text) {
+function inferLanguageTags(text) {
   const t = String(text || '');
-  const flags = [];
-  const push = (f) => { if (!flags.includes(f)) flags.push(f); };
+  const tags = [];
+  const push = (tag) => { if (!tags.includes(tag)) tags.push(tag); };
 
-  if (/(pt-br|ptbr|portuguese|dublado|dual\s*portuguese)/i.test(t)) push('\uD83C\uDDE7\uD83C\uDDF7');
-  if (/(english|eng\b|en\b)/i.test(t)) push('\uD83C\uDDFA\uD83C\uDDF8');
-  if (/(japanese|jap\b|jp\b|anime)/i.test(t)) push('\uD83C\uDDEF\uD83C\uDDF5');
-  if (/(spanish|espanol|espaÃ±ol|latino)/i.test(t)) push('\uD83C\uDDEA\uD83C\uDDF8');
-  if (/(french|francais|franÃ§ais|vf\b)/i.test(t)) push('\uD83C\uDDEB\uD83C\uDDF7');
-  if (/(italian|italiano)/i.test(t)) push('\uD83C\uDDEE\uD83C\uDDF9');
-  if (/(german|deutsch)/i.test(t)) push('\uD83C\uDDE9\uD83C\uDDEA');
+  if (/(pt-br|ptbr|portuguese|dublado|dual\s*portuguese)/i.test(t)) push('BR');
+  if (/(english|eng\b|en\b)/i.test(t)) push('US');
+  if (/(japanese|jap\b|jp\b|anime)/i.test(t)) push('JP');
+  if (/(spanish|espanol|espa[nñ]ol|latino)/i.test(t)) push('ES');
+  if (/(french|francais|fran[cç]ais|vf\b)/i.test(t)) push('FR');
+  if (/(italian|italiano)/i.test(t)) push('IT');
+  if (/(german|deutsch)/i.test(t)) push('DE');
 
-  return flags;
+  return tags;
 }
 
 function formatStreamName(title, audioType) {
@@ -286,14 +280,13 @@ function formatStream({ title, infoHash, magnet, source, seeds, size, audioType,
   if (!hash) return null;
 
   const type = audioType || detectAudioType(title || '') || 'dubbed';
-  const icon = SOURCE_ICONS[source] || '\uD83C\uDF10';
-  const flags = inferLanguageFlags(title || '');
+  const tags = inferLanguageTags(title || '');
 
   const desc = [
-    icon + ' ' + source,
-    size ? '\uD83D\uDCBE ' + size : '',
-    seeds ? '\uD83D\uDC64 ' + seeds + ' seeds' : '',
-    flags.length ? flags.join(' ') : '',
+    source,
+    size ? size : '',
+    seeds ? (seeds + ' seeds') : '',
+    tags.length ? tags.join(' ') : '',
     (title || '').substring(0, 90),
   ].filter(Boolean).join('\n');
 
