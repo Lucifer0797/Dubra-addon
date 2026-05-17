@@ -10,7 +10,7 @@ const cache = require('../utils/cache');
 const health = require('../utils/health');
 
 const SOURCE = 'BeTor';
-const PROWLARR_URL = process.env.PROWLARR_URL || 'https://prowlarr-production-05c4.up.railway.app';
+const PROWLARR_URL = process.env.PROWLARR_URL || '';
 const PROWLARR_API_KEY = process.env.PROWLARR_API_KEY || '';
 const PROWLARR_INDEXER_ID = process.env.PROWLARR_INDEXER_ID || '';
 // Referência de definição Cardigann para configurar no Prowlarr:
@@ -31,6 +31,11 @@ function normalizeProwlarrMagnet(item) {
   if (item?.magnetUrl) return item.magnetUrl;
   if (item?.downloadUrl && String(item.downloadUrl).startsWith('magnet:')) return item.downloadUrl;
   if (item?.guid && String(item.guid).startsWith('magnet:')) return item.guid;
+  // Alguns indexadores no Prowlarr nao retornam magnet direto, so hash.
+  if (item?.infoHash) {
+    const dn = encodeURIComponent(item?.title || 'torrent');
+    return 'magnet:?xt=urn:btih:' + String(item.infoHash).trim() + '&dn=' + dn;
+  }
   return null;
 }
 
