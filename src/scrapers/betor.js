@@ -31,12 +31,64 @@ function normalizeProwlarrMagnet(item) {
   if (item?.magnetUrl) return item.magnetUrl;
   if (item?.downloadUrl && String(item.downloadUrl).startsWith('magnet:')) return item.downloadUrl;
   if (item?.guid && String(item.guid).startsWith('magnet:')) return item.guid;
+
+  // Alguns indexadores devolvem URL com magnet codificado em query param.
+  const fromWrappedUrl = extractMagnetFromWrappedUrl(item?.downloadUrl) || extractMagnetFromWrappedUrl(item?.guid);
+  if (fromWrappedUrl) return fromWrappedUrl;
+
+  // Campos alternativos de hash que aparecem em alguns providers.
+  const possibleHash =
+    item?.infoHash ||
+    item?.infohash ||
+    item?.hash ||
+    item?.torrentInfoHash ||
+    item?.torrentHash;
+
+  if (possibleHash) {
+    const dn = encodeURIComponent(item?.title || 'torrent');
+    return 'magnet:?xt=urn:btih:' + String(possibleHash).trim() + '&dn=' + dn;
+  }
+
   // Alguns indexadores no Prowlarr nao retornam magnet direto, so hash.
   if (item?.infoHash) {
     const dn = encodeURIComponent(item?.title || 'torrent');
     return 'magnet:?xt=urn:btih:' + String(item.infoHash).trim() + '&dn=' + dn;
   }
   return null;
+}
+
+function extractMagnetFromWrappedUrl(raw) {
+  const str = String(raw || '');
+  if (!str) return null;
+  try {
+    const u = new URL(str);
+    const candidates = [
+      u.searchParams.get('link'),
+      u.searchParams.get('url'),
+      u.searchParams.get('target'),
+      u.searchParams.get('r'),
+    ].filter(Boolean);
+    for (const c of candidates) {
+      const decoded = safeDecode(c);
+      if (String(decoded).startsWith('magnet:')) return decoded;
+      const btih = String(decoded).match(/btih:([a-f0-9]{32,40})/i);
+      if (btih) {
+        const dn = encodeURIComponent('torrent');
+        return 'magnet:?xt=urn:btih:' + btih[1] + '&dn=' + dn;
+      }
+    }
+  } catch {
+    // ignora parse error
+  }
+  return null;
+}
+
+function safeDecode(val) {
+  try {
+    return decodeURIComponent(String(val || ''));
+  } catch {
+    return String(val || '');
+  }
 }
 
 function isSeriesEpisodeMatch(name, type, season, episode) {
@@ -68,58 +120,63 @@ async function fetchFromProwlarr(imdbId, type, season, episode, titleInfo, cfg) 
   for (const raw of queries) {
     const query = String(raw || '').trim();
     try {
-      let params;
+      const strategies = [];
       if (type === 'series') {
-        params = {
+        strategies.push({
           ...baseParams,
           type: 'tvsearch',
           imdbId,
           season,
           episode,
           query,
-        };
+        });
       } else {
-        params = {
+        strategies.push({
           ...baseParams,
           type: 'movie',
           imdbId,
           query,
-        };
+        });
       }
 
-      const res = await http.get(base + '/api/v1/search', {
-        params,
-        timeout: cfg?.timeout || 8000,
-        headers: { 'X-Api-Key': PROWLARR_API_KEY },
-        'axios-retry': { retries: 0 },
-      });
+      // Fallback que replica melhor o comportamento da UI do Prowlarr.
+      strategies.push({ ...baseParams, type: 'search', query });
 
-      const results = Array.isArray(res.data) ? res.data : [];
-      const streams = results
-        .filter((item) => {
-          const name = item?.title || '';
-          const audioType = detectAudioType(name);
-          const isPt = isPtBr(name);
-          if (!(isPt || audioType === 'dubbed' || audioType === 'dual' || audioType === 'multi')) return false;
-          return isSeriesEpisodeMatch(name, type, season, episode);
+      for (const params of strategies) {
+        const res = await http.get(base + '/api/v1/search', {
+          params,
+          timeout: cfg?.timeout || 8000,
+          headers: { 'X-Api-Key': PROWLARR_API_KEY },
+          'axios-retry': { retries: 0 },
         })
-        .map((item) => {
-          const name = item?.title || '';
-          const magnet = normalizeProwlarrMagnet(item);
-          if (!magnet) return null;
-          return formatStream({
-            title: name,
-            magnet,
-            source: SOURCE,
-            seeds: Number.isFinite(Number(item?.seeders)) ? Number(item.seeders) : null,
-            size: formatSizeBytes(item?.size),
-            audioType: detectAudioType(name) || 'dubbed',
-          });
-        })
-        .filter(Boolean)
-        .slice(0, cfg?.limitPerSource || 5);
 
-      if (streams.length) return streams;
+        const results = Array.isArray(res.data) ? res.data : [];
+        const streams = results
+          .filter((item) => {
+            const name = item?.title || '';
+            const audioType = detectAudioType(name);
+            const isPt = isPtBr(name);
+            if (!(isPt || audioType === 'dubbed' || audioType === 'dual' || audioType === 'multi')) return false;
+            return isSeriesEpisodeMatch(name, type, season, episode);
+          })
+          .map((item) => {
+            const name = item?.title || '';
+            const magnet = normalizeProwlarrMagnet(item);
+            if (!magnet) return null;
+            return formatStream({
+              title: name,
+              magnet,
+              source: SOURCE,
+              seeds: Number.isFinite(Number(item?.seeders)) ? Number(item.seeders) : null,
+              size: formatSizeBytes(item?.size),
+              audioType: detectAudioType(name) || 'dubbed',
+            });
+          })
+          .filter(Boolean)
+          .slice(0, cfg?.limitPerSource || 5);
+
+        if (streams.length) return streams;
+      }
     } catch {
       // silencioso
     }
