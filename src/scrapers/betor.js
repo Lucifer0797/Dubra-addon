@@ -58,15 +58,33 @@ async function fetchFromProwlarr(imdbId, type, season, episode, titleInfo, cfg) 
     if (t) queries.push(t);
   }
 
+  const baseParams = {};
+  if (PROWLARR_INDEXER_ID) baseParams.indexerIds = PROWLARR_INDEXER_ID;
+  else {
+    const autoId = await resolveBetorIndexerId(base);
+    if (autoId) baseParams.indexerIds = String(autoId);
+  }
+
   for (const raw of queries) {
-    let query = raw;
-    if (type === 'series' && season) query += ' temporada ' + season;
+    const query = String(raw || '').trim();
     try {
-      const params = { query, type: 'search' };
-      if (PROWLARR_INDEXER_ID) params.indexerIds = PROWLARR_INDEXER_ID;
-      else {
-        const autoId = await resolveBetorIndexerId(base);
-        if (autoId) params.indexerIds = String(autoId);
+      let params;
+      if (type === 'series') {
+        params = {
+          ...baseParams,
+          type: 'tvsearch',
+          imdbId,
+          season,
+          episode,
+          query,
+        };
+      } else {
+        params = {
+          ...baseParams,
+          type: 'movie',
+          imdbId,
+          query,
+        };
       }
 
       const res = await http.get(base + '/api/v1/search', {
