@@ -10,7 +10,7 @@ const cache = require('../utils/cache');
 const health = require('../utils/health');
 
 const SOURCE = 'BeTor';
-const PROWLARR_URL = process.env.PROWLARR_URL || '';
+const PROWLARR_URL = process.env.PROWLARR_URL || 'https://prowlarr-production-05c4.up.railway.app';
 const PROWLARR_API_KEY = process.env.PROWLARR_API_KEY || '';
 const PROWLARR_INDEXER_ID = process.env.PROWLARR_INDEXER_ID || '';
 // Referência de definição Cardigann para configurar no Prowlarr:
