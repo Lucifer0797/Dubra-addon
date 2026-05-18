@@ -120,8 +120,7 @@ function configurePage(baseUrl) {
       <div class="sec">
         <div class="lbl">Ativar / desativar</div>
         <div class="card">
-          <div class="row"><div><div class="rn">BeTor</div><div class="rs">Catálogo BeTor PT-BR por IMDb e título</div></div><label class="tog"><input type="checkbox" id="src-betor" checked><span class="togslider"></span></label></div>
-          <div class="row"><div><div class="rn">ThepirataFilmes</div><div class="rs">Prowlarr dedicado (teste separado)</div></div><label class="tog"><input type="checkbox" id="src-thepirata"><span class="togslider"></span></label></div>
+          <div class="row"><div><div class="rn">Prowlarr</div><div class="rs">Fontes usadas: BeTor e ThepirataFilmes</div></div><label class="tog"><input type="checkbox" id="src-betor" checked><span class="togslider"></span></label></div>
           <div class="row"><div><div class="rn">Torrentio Brazuca</div><div class="rs">Maior cobertura PT-BR</div></div><label class="tog"><input type="checkbox" id="src-torrentio" checked><span class="togslider"></span></label></div>
           <div class="row"><div><div class="rn">Brazuca Torrents</div><div class="rs">ApacheTorrent, RedeTorrent, VacaTorrent</div></div><label class="tog"><input type="checkbox" id="src-brazuca" checked><span class="togslider"></span></label></div>
           <div class="row"><div><div class="rn">Torrent Indexer</div><div class="rs">BluDV, Comando, Starck</div></div><label class="tog"><input type="checkbox" id="src-indexer" checked><span class="togslider"></span></label></div>
@@ -408,8 +407,14 @@ function configurePage(baseUrl) {
         const lt = document.getElementById("r2").value;
         const to = document.getElementById("r3").value;
 
-        const activeSrc = ["betor", "thepirata", "torrentio", "brazuca", "indexer", "torrentsdb"]
-          .filter((k) => document.getElementById("src-" + k).checked);
+        const activeSrc = [];
+        if (document.getElementById("src-betor").checked) {
+          activeSrc.push("betor", "thepirata");
+        }
+        if (document.getElementById("src-torrentio").checked) activeSrc.push("torrentio");
+        if (document.getElementById("src-brazuca").checked) activeSrc.push("brazuca");
+        if (document.getElementById("src-indexer").checked) activeSrc.push("indexer");
+        if (document.getElementById("src-torrentsdb").checked) activeSrc.push("torrentsdb");
 
         let path = "";
         if (q) path += "/quality~" + q;
@@ -420,7 +425,7 @@ function configurePage(baseUrl) {
         if (ls !== "5" || lt !== "20") path += "/limit~" + ls + "," + lt;
         if (to !== "8") path += "/timeout~" + to;
 
-        const def = ["betor", "torrentio", "brazuca", "indexer"];
+        const def = ["betor", "thepirata", "torrentio", "brazuca", "indexer"];
         const isDef = activeSrc.length === def.length && def.every((k) => activeSrc.includes(k));
         if (!isDef) path += "/sources~" + activeSrc.join(",");
 
@@ -452,7 +457,7 @@ function configurePage(baseUrl) {
             buildUrl();
           });
         });
-        ["betor","thepirata","torrentio","brazuca","indexer","torrentsdb"].forEach((k) => {
+        ["betor","torrentio","brazuca","indexer","torrentsdb"].forEach((k) => {
           document.getElementById("src-" + k).addEventListener("change", buildUrl);
         });
         ["opt-cache","opt-prefetch","opt-dedupsize","opt-original","opt-debug","sel-behavior","sel-sort"].forEach((id) => {

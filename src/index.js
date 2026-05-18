@@ -65,7 +65,7 @@ function buildRescueConfig(cfg) {
   next.srcOrder = ['remux', 'bluray', 'webdl', 'webrip', 'bdrip', 'hdrip', 'hdtv', 'dvdrip', 'cam'];
   next.sources = {
     betor: true,
-    thepirata: false,
+    thepirata: true,
     torrentio: true,
     brazuca: true,
     indexer: true,
@@ -130,7 +130,7 @@ function applyFormatter(streams, cfg) {
 
   return streams.map((s) => {
     const title = cleanTitle(s._title || s.name || '');
-    const source = 'Dubra';
+    const source = s._source || 'Fonte';
     const res = (extractResolution(title) || '').toUpperCase();
     const srcRaw = extractSource(title) || '';
     const src = srcRaw ? srcRaw.toUpperCase().replace('WEBDL', 'WEB-DL') : '';
