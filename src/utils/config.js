@@ -30,6 +30,7 @@ const DEFAULTS = {
     torrentsdb:false,
   },
   allowOriginal: false,
+  debug: false,
   formatterPreset: 'compact', // compact | detailed | technical | custom
   formatterName: '',
   formatterDesc: '',
@@ -140,7 +141,7 @@ function parseConfig(urlPath) {
       continue;
     }
 
-    // flags~cache0,prefetch0,dedup0,dedupsize0,original1
+    // flags~cache0,prefetch0,dedup0,dedupsize0,original1,debug1
     if (seg.startsWith('flags~') || seg.startsWith('flags-')) {
       const vals = seg.slice(6).split(',').filter(Boolean);
       if (vals.includes('cache0')) cfg.cache = false;
@@ -148,6 +149,8 @@ function parseConfig(urlPath) {
       if (vals.includes('dedup0')) cfg.dedup = false;
       if (vals.includes('dedupsize0')) cfg.dedupBySize = false;
       if (vals.includes('original1')) cfg.allowOriginal = true;
+      if (vals.includes('debug1')) cfg.debug = true;
+      if (vals.includes('debug0')) cfg.debug = false;
       continue;
     }
 

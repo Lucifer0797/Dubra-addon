@@ -166,6 +166,7 @@ function configurePage(baseUrl) {
           <div class="row"><div><div class="rn">Prefetch de episódios</div><div class="rs">Pré-carrega próximo episódio em background</div></div><label class="tog"><input type="checkbox" id="opt-prefetch"><span class="togslider"></span></label></div>
           <div class="row"><div><div class="rn">Deduplicação por tamanho</div><div class="rs">Remove torrents iguais com hash diferente</div></div><label class="tog"><input type="checkbox" id="opt-dedupsize" checked><span class="togslider"></span></label></div>
           <div class="row"><div><div class="rn">Idioma original</div><div class="rs">Permite streams sem áudio PT-BR</div></div><label class="tog"><input type="checkbox" id="opt-original"><span class="togslider"></span></label></div>
+          <div class="row"><div><div class="rn">Modo debug</div><div class="rs">Libera diagnósticos para suporte neste link</div></div><label class="tog"><input type="checkbox" id="opt-debug"><span class="togslider"></span></label></div>
           <div class="row"><div><div class="rn">Ordenação</div><div class="rs">Como organizar os resultados</div></div><select id="sel-sort"><option value="balanced">Balanceado</option><option value="quality">Qualidade</option><option value="seeds">Seeds</option><option value="size_asc">Tamanho (menor)</option><option value="size_desc">Tamanho (maior)</option></select></div>
         </div>
       </div>
@@ -431,6 +432,7 @@ function configurePage(baseUrl) {
         if (!document.getElementById("opt-prefetch").checked) flags.push("prefetch0");
         if (!document.getElementById("opt-dedupsize").checked) flags.push("dedupsize0");
         if (document.getElementById("opt-original").checked) flags.push("original1");
+        if (document.getElementById("opt-debug").checked) flags.push("debug1");
         if (flags.length) path += "/flags~" + flags.join(",");
 
         const full = BASE_URL + path + "/manifest.json";
@@ -452,7 +454,7 @@ function configurePage(baseUrl) {
         ["betor","torrentio","brazuca","indexer","torrentsdb"].forEach((k) => {
           document.getElementById("src-" + k).addEventListener("change", buildUrl);
         });
-        ["opt-cache","opt-prefetch","opt-dedupsize","opt-original","sel-behavior","sel-sort"].forEach((id) => {
+        ["opt-cache","opt-prefetch","opt-dedupsize","opt-original","opt-debug","sel-behavior","sel-sort"].forEach((id) => {
           document.getElementById(id).addEventListener("change", buildUrl);
         });
 
