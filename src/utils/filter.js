@@ -335,9 +335,24 @@ function formatStreamName(title, audioType) {
 }
 
 function formatStream({ title, infoHash, magnet, source, seeds, size, audioType, fileIdx, url, behaviorHints, filename }) {
-  const hash = infoHash || extractInfoHash(magnet);
-  if (!hash && !url) return null;
-  const safeUrl = hash ? null : url;
+  let hash = infoHash || extractInfoHash(magnet);
+  let safeUrl = url || null;
+
+  // Compatibilidade Nuvio:
+  // evita enviar url magnet: (Nuvio pode falhar com "unknown protocol: magnet").
+  if (safeUrl && /^magnet:/i.test(String(safeUrl))) {
+    const fromUrl = extractInfoHash(String(safeUrl));
+    if (fromUrl) {
+      hash = hash || fromUrl;
+      safeUrl = null;
+    } else {
+      // Sem infoHash extraível, descarta para evitar erro no player.
+      safeUrl = null;
+    }
+  }
+
+  if (!hash && !safeUrl) return null;
+  if (hash) safeUrl = null;
 
   const type = audioType || detectAudioType(title || '') || 'dubbed';
   const icon = SOURCE_ICONS[source] || '\uD83C\uDF10';
